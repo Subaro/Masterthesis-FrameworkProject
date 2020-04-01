@@ -1,0 +1,32 @@
+c 1 BoolUnOp
+c 2 Vars
+c 3 Arith
+c 4 BoolBinOp
+c 5 CmdLine
+c 6 Base
+c 7 UnOp
+c 8 BinOp_Vars
+c 9 ITE_Vars
+c 10 Bool
+c 11 UnOp_Vars
+c 12 Let
+c 13 BinOp
+c 14 ITE
+c 15 Lambda
+p cnf 15 16
+3 0
+3 -6 0
+3 -10 0
+3 -4 0
+3 -13 0
+3 -1 0
+3 -7 0
+3 -12 0
+3 -8 0
+3 -11 0
+3 -14 0
+3 -9 0
+3 -15 0
+3 -5 0
+3 -2 0
+6 -3 0

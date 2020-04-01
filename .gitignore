@@ -1,0 +1,13 @@
+/.settings/
+/bin/
+/build/
+/gen/
+/lib/
+/.classpath
+/.project
+/build_jar.properties
+/pc_sampling_evaluation.jar
+/gen/*
+/gen/
+output/
+output/*
