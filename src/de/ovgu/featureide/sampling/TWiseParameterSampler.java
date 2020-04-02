@@ -353,6 +353,8 @@ public class TWiseParameterSampler extends AAlgorithmBenchmark<SolutionList, AJa
 			// Validity
 			List<LiteralSet> samples = configurationList.getSolutions();
 			TWiseConfigurationTester tester = new TWiseConfigurationTester(randomizedModelCNF);
+			tester.setNodes(TWiseConfigurationGenerator.convertLiterals(randomizedModelCNF.getVariables().getLiterals())); 
+			tester.setT(Integer.parseInt(tProperty.getValue().get(0)));
 			tester.setSample(samples);
 
 			Logger.getInstance().logInfo("\tTesting configuration validity...", 2, true);
@@ -360,7 +362,6 @@ public class TWiseParameterSampler extends AAlgorithmBenchmark<SolutionList, AJa
 
 			// Completeness
 			Logger.getInstance().logInfo("\tCalculating configuration coverage...", 2, true);
-			tester.setNodes(TWiseConfigurationGenerator.convertLiterals(randomizedModelCNF.getVariables().getLiterals())); 
 			dataCSVWriter.addValue(tester.getCoverage().getCoverage());
 		} else {
 			dataCSVWriter.addValue(1);
@@ -422,7 +423,7 @@ public class TWiseParameterSampler extends AAlgorithmBenchmark<SolutionList, AJa
 		final DIMACSFormatCNF format = new DIMACSFormatCNF();
 		final Path fileName = config.tempPath.resolve("model" + "." + format.getSuffix());
 		FileHandler.save(fileName, randomCNF, format);
-		return modelCNF;
+		return randomCNF;
 	}
 
 	@Override
