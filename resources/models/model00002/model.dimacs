@@ -1,0 +1,37 @@
+c 1 Unweighted
+c 2 Wgt
+c 3 Src
+c 4 Directed
+c 5 Edges
+c 6 Cycle
+c 7 BFS
+c 8 DFS
+c 9 Weighted
+c 10 Algorithms
+c 11 Number
+c 12 Undirected
+c 13 GraphLibrary
+p cnf 13 23
+13 0
+2 -9 0
+2 -1 0
+9 1 -2 0
+-9 -1 0
+3 -7 0
+3 -8 0
+7 8 -3 0
+-7 -8 0
+5 -12 0
+5 -4 0
+12 4 -5 0
+-12 -4 0
+10 -6 0
+10 -11 0
+6 11 -10 0
+13 -2 0
+13 -10 0
+13 -5 0
+13 -3 0
+2 -13 0
+5 -13 0
+-6 4 0

@@ -3,7 +3,6 @@ package de.ovgu.featureide.sampling.algorithms;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
 import de.ovgu.featureide.fm.benchmark.process.Algorithm;
@@ -13,22 +12,15 @@ import de.ovgu.featureide.fm.core.analysis.cnf.SolutionList;
 public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<SolutionList> {
 
 	protected final Path fmFile;
+	protected final Path gcCollectorPath;
 	protected final Path outputFile;
 	protected final int t;
-	protected final Path gcCollectorPath;
 
 	public AJavaMemoryTWiseSamplingAlgorithm(int t, Path outputFile, Path fmFile, Path gcCollectorPath) {
 		this.t = t;
 		this.outputFile = outputFile;
 		this.fmFile = fmFile;
 		this.gcCollectorPath = gcCollectorPath;
-		
-		addCommandElement("java");
-		addCommandElement("-da");
-		addCommandElement("-Xmx3g");
-		addCommandElement("-Xms2g");
-		addCommandElement("-Xloggc:" + getPathOfGarbageCollectorFile());
-		addCommandElement("-XX:+PrintGCDateStamps");
 	}
 
 	/**
@@ -68,6 +60,18 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 	 */
 	@Override
 	protected void addCommandElements() {
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if ((obj == null)) {
+			return false;
+		}
+		final Algorithm<?> other = (Algorithm<?>) obj;
+		return Objects.equals(this.getFullName(), other.getFullName());
 	}
 
 	/**
@@ -111,18 +115,13 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 
 	@Override
 	public final void preProcess() throws Exception {
+		commandElements.clear();
+		addCommandElement("java");
+		addCommandElement("-da");
+		addCommandElement("-Xmx3g");
+		addCommandElement("-Xms2g");
+		addCommandElement("-Xloggc:" + getPathOfGarbageCollectorFile());
+		addCommandElement("-XX:+PrintGCDateStamps");
 		addCommandElements();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if ((obj == null)) {
-			return false;
-		}
-		final Algorithm<?> other = (Algorithm<?>) obj;
-		return Objects.equals(this.getFullName(), other.getFullName());
 	}
 }

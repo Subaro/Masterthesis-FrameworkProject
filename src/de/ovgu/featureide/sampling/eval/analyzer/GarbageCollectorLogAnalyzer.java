@@ -26,13 +26,14 @@ import de.ovgu.featureide.sampling.process.GCResult;
  */
 public class GarbageCollectorLogAnalyzer {
 
-	private final Path pathToLogFile;
-	
-	/** This output stream omits all logs*/
+	/** This output stream omits all logs */
 	private OutputStream emptyStream = new OutputStream() {
 		@Override
-		public void write(int b) throws IOException {}
+		public void write(int b) throws IOException {
+		}
 	};
+
+	private final Path pathToLogFile;
 
 	public GarbageCollectorLogAnalyzer(Path pathToLogFile) {
 		this.pathToLogFile = pathToLogFile;
@@ -61,8 +62,8 @@ public class GarbageCollectorLogAnalyzer {
 			} catch (DataReaderException e) {
 			} catch (IOException e1) {
 			} finally {
-			    System.setErr(oldErr);
-			    System.setOut(oldOut);
+				System.setErr(oldErr);
+				System.setOut(oldOut);
 			}
 		}
 
