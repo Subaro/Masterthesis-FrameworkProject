@@ -6,10 +6,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.ovgu.featureide.fm.benchmark.AAlgorithmBenchmark;
+import de.ovgu.featureide.fm.benchmark.process.Algorithm;
 import de.ovgu.featureide.fm.benchmark.properties.IntProperty;
 import de.ovgu.featureide.fm.benchmark.util.CSVWriter;
 import de.ovgu.featureide.fm.benchmark.util.FeatureModelReader;
@@ -57,6 +61,31 @@ public class TWiseParameterSampler
 	private static final String PARAMETER_INPUTSYSTEM_PATH = "-in";
 	private static final String PARAMETER_OUTPUTSYSTEM_PATH = "-out";
 	protected static final IntProperty tProperty = new IntProperty("t");
+
+	@Override
+	public void dispose() {
+		super.dispose();
+		//remove csv files
+			try {
+				Files.walkFileTree(config.csvPath, new SimpleFileVisitor<Path>() {
+					@Override
+					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+						if (file.getFileName().toString().contains("algorithms.csv") || file.getFileName().toString().contains("models.csv")) {
+							Files.deleteIfExists(file);
+						}
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+						return FileVisitResult.CONTINUE;
+					}
+				});
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	}
+
 	public static void main(String[] args) throws Exception {
 		if (args.length < 2) {
 			Logger.getInstance().logInfo("Configuration path and name not specified!", 0, false);
@@ -75,6 +104,7 @@ public class TWiseParameterSampler
 			Logger.getInstance().logInfo("Stopping framework. Reason: see [Error] above!", 0, false);
 		}
 	}
+
 	private static String toString(List<String> sample) {
 		StringBuilder sb = new StringBuilder();
 		for (String string : sample) {
@@ -86,6 +116,7 @@ public class TWiseParameterSampler
 		}
 		return sb.toString();
 	}
+
 	/**
 	 * Saves samples for the current system temporarly. It contains all samples from
 	 * one model and for all system iteration. Each system iteration represents one
@@ -127,10 +158,14 @@ public class TWiseParameterSampler
 
 	@Override
 	protected void addCSVWriters() {
-		super.addCSVWriters();
-		extendCSVWriter(getModelCSVWriter(), Arrays.asList("Configurations", "Features", "Constraints"));
-		extendCSVWriter(getDataCSVWriter(), Arrays.asList("Size", "Validity", "Coverage", "ROIC", "MSOC", "FIMD",
-				"ICST", "Runtime", "Throughput", "TotalCreatedBytes", "TotalPauseTime", "AveragePauseTime"));
+		dataCSVWriter = addCSVWriter("data.csv",
+				Arrays.asList("AlgorithmID", "ModelID", "ModelName", "Model_Features", "Model_Constraints", "SystemIteration",
+						"AlgorithmIteration", "InTime", "NoError", "Time", "Size", "Validity", "Coverage", "ROIC",
+						"MSOC", "FIMD", "ICST", "Runtime", "Throughput", "TotalCreatedBytes", "TotalPauseTime",
+						"AveragePauseTime"));
+		modelCSVWriter = addCSVWriter("models.csv", Arrays.asList("ModelID", "Name"));
+		algorithmCSVWriter = addCSVWriter("algorithms.csv",
+				Arrays.asList("ModelID", "AlgorithmID", "Name", "Settings"));
 	}
 
 	private void createModelEntry(Path model) {
@@ -175,7 +210,8 @@ public class TWiseParameterSampler
 	@Override
 	public void init() throws Exception {
 		super.init();
-		isSampleStabilityConsidered = PrefixChecker.getLongestCommonPrefix(config.systemNames).length() > 5;
+		isSampleStabilityConsidered = PrefixChecker.getLongestCommonPrefix(config.systemNames).length() > 5
+				&& config.systemNames.size() > 1;
 		systems = new IFeatureModel[config.systemNames.size()];
 	}
 
@@ -382,25 +418,21 @@ public class TWiseParameterSampler
 			final Path sampleFile = config.tempPath.resolve("sample.csv");
 			final Path modelFile = config.tempPath.resolve("model.dimacs");
 			final Path gcCollectorFile = config.tempPath.resolve("runtimeGC.log");
-			switch (algorithmName) {
-			default:
-				// Try if the given string is a class name for an external algorithm
-				try {
-					if (cl != null) {
-						Class<AJavaMemoryTWiseSamplingAlgorithm> cls;
-						cls = (Class<AJavaMemoryTWiseSamplingAlgorithm>) cl.loadClass(algorithmName);
-						try {
-							algorithms.add(cls.getDeclaredConstructor(int.class, Path.class, Path.class, Path.class)
-									.newInstance(tValue, sampleFile, modelFile, gcCollectorFile));
-						} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-								| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-							Logger.getInstance().logError(e);
-						}
+			// Try if the given string is a class name for an external algorithm
+			try {
+				if (cl != null) {
+					Class<AJavaMemoryTWiseSamplingAlgorithm> cls;
+					cls = (Class<AJavaMemoryTWiseSamplingAlgorithm>) cl.loadClass(algorithmName);
+					try {
+						algorithms.add(cls.getDeclaredConstructor(int.class, Path.class, Path.class, Path.class)
+								.newInstance(tValue, sampleFile, modelFile, gcCollectorFile));
+					} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+							| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+						Logger.getInstance().logError(e);
 					}
-				} catch (ClassNotFoundException e) {
-					Logger.getInstance().logError(e);
 				}
-				break;
+			} catch (ClassNotFoundException e) {
+				Logger.getInstance().logError(e);
 			}
 		}
 
@@ -432,7 +464,7 @@ public class TWiseParameterSampler
 			throw new NullPointerException();
 		}
 		systems[systemIndex] = fm;
-		CNF modelCNF = new FeatureModelFormula(fm).getElement(new NoAbstractCNFCreator()).normalize();
+		CNF modelCNF = new FeatureModelFormula(fm).getCNF();
 
 		curSampleDir = samplesDir.resolve(systemName);
 		Files.createDirectories(curSampleDir);
@@ -464,11 +496,33 @@ public class TWiseParameterSampler
 	}
 
 	@Override
+	protected void writeAlgorithm(CSVWriter algorithmCSVWriter) {
+	}
+
+	@Override
 	protected void writeData(CSVWriter dataCSVWriter) {
-		super.writeData(dataCSVWriter);
+		// 1. First write algorithm info
+		final Algorithm<?> algorithm = algorithmList.get(algorithmIndex);
+		dataCSVWriter.addValue(algorithm.getFullName());
+
+		// 2. Write model info
+		dataCSVWriter.addValue(systemIndex);
+		dataCSVWriter.addValue(config.systemNames.get(systemIndex));
+		dataCSVWriter.addValue(modelCNF.getVariables().size());
+		dataCSVWriter.addValue(modelCNF.getClauses().size());
+
+		// 3. Iteration info
+		dataCSVWriter.addValue(systemIteration);
+		dataCSVWriter.addValue(algorithmIteration);
+
+		// 4. Time results
+		dataCSVWriter.addValue(result.isTerminatedInTime());
+		dataCSVWriter.addValue(result.isNoError());
+		dataCSVWriter.addValue(result.getTime());
 
 		final SolutionList configurationList = result.getResult();
 		if (configurationList != null) {
+
 			// Create sample from solution list
 			Sample sample = new Sample();
 			for (LiteralSet config : configurationList.getSolutions()) {
@@ -483,12 +537,14 @@ public class TWiseParameterSampler
 				}
 				sample.add(configList);
 			}
-			// Save sample
-			curentSystemSamples[systemIteration - 1][algorithmIndex] = sample;
+			if (isSampleStabilityConsidered) {
+				// Save sample
+				curentSystemSamples[systemIteration - 1][algorithmIndex] = sample;
+			}
 
-			// Write sample metrics
+			// 5. Write sample metrics
 			writeSamplesInfo(dataCSVWriter);
-			// Write memory metrics
+			// 6. Write memory metrics
 			writeMemory(dataCSVWriter);
 			// Save sample
 			writeSamples(config.systemNames.get(systemIndex) + "_" + algorithmList.get(algorithmIndex) + "_"
@@ -511,6 +567,10 @@ public class TWiseParameterSampler
 		memoryCSVWriter.addValue(nf.format(result.getStatisticCreatedBytesTotal()));
 		memoryCSVWriter.addValue(nf.format(result.getStatisticPauseTimeTotal()));
 		memoryCSVWriter.addValue(nf.format(result.getStatisticPauseTimeAvg()));
+	}
+
+	@Override
+	protected void writeModel(CSVWriter modelCSVWriter) {
 	}
 
 	protected void writeSamples(final String sampleMethod, final Sample sample) {
@@ -567,23 +627,26 @@ public class TWiseParameterSampler
 						dataCSVWriter.addValue(nf.format(similarityResult.resultICST));
 					} else {
 						// Just print -1 for skipped iterations
-						dataCSVWriter.addValue(-1);
-						dataCSVWriter.addValue(-1);
-						dataCSVWriter.addValue(-1);
-						dataCSVWriter.addValue(-1);
+						for (int i = 0; i < 4; i++) {
+							dataCSVWriter.addValue(-1);
+						}
 					}
 				} else {
 					// Just print -1 for first iteration
-					dataCSVWriter.addValue(-1);
-					dataCSVWriter.addValue(-1);
-					dataCSVWriter.addValue(-1);
+					for (int i = 0; i < 4; i++) {
+						dataCSVWriter.addValue(-1);
+					}
+				}
+			} else {
+				// Just print -1 for non stability mode
+				for (int i = 0; i < 4; i++) {
 					dataCSVWriter.addValue(-1);
 				}
 			}
 		} else {
-			dataCSVWriter.addValue(1);
-			dataCSVWriter.addValue(0);
+			for (int i = 0; i < 8; i++) {
+				dataCSVWriter.addValue(-1);
+			}
 		}
 	}
-
 }
