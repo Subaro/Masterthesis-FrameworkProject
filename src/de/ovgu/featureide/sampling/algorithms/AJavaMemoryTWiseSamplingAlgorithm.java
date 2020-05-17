@@ -118,10 +118,10 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 		commandElements.clear();
 		addCommandElement("java");
 		addCommandElement("-da");
-		addCommandElement("-Xmx3g");
+		addCommandElement("-Xmx24g");
 		addCommandElement("-Xms2g");
-		addCommandElement("-Xloggc:" + getPathOfGarbageCollectorFile());
-		addCommandElement("-XX:+PrintGCDateStamps");
+		addCommandElement("-Xlog:gc:" + getPathOfGarbageCollectorFile());
+		//addCommandElement("-XX:+PrintGCDateStamps");
 		addCommandElements();
 	}
 }

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 import de.ovgu.featureide.fm.benchmark.AAlgorithmBenchmark;
 import de.ovgu.featureide.fm.benchmark.process.Algorithm;
 import de.ovgu.featureide.fm.benchmark.properties.IntProperty;
+import de.ovgu.featureide.fm.benchmark.properties.StringProperty;
 import de.ovgu.featureide.fm.benchmark.util.CSVWriter;
 import de.ovgu.featureide.fm.benchmark.util.FeatureModelReader;
 import de.ovgu.featureide.fm.benchmark.util.Logger;
@@ -33,9 +35,9 @@ import de.ovgu.featureide.fm.core.analysis.cnf.ClauseList;
 import de.ovgu.featureide.fm.core.analysis.cnf.LiteralSet;
 import de.ovgu.featureide.fm.core.analysis.cnf.SolutionList;
 import de.ovgu.featureide.fm.core.analysis.cnf.formula.FeatureModelFormula;
-import de.ovgu.featureide.fm.core.analysis.cnf.formula.NoAbstractCNFCreator;
 import de.ovgu.featureide.fm.core.analysis.cnf.generator.configuration.twise.TWiseConfigurationGenerator;
 import de.ovgu.featureide.fm.core.analysis.cnf.generator.configuration.twise.TWiseConfigurationTester;
+import de.ovgu.featureide.fm.core.analysis.cnf.generator.configuration.twise.test.CoverageStatistic;
 import de.ovgu.featureide.fm.core.base.IFeatureModel;
 import de.ovgu.featureide.fm.core.io.dimacs.DIMACSFormat;
 import de.ovgu.featureide.fm.core.io.dimacs.DIMACSFormatCNF;
@@ -61,6 +63,7 @@ public class TWiseParameterSampler
 	private static final String PARAMETER_INPUTSYSTEM_PATH = "-in";
 	private static final String PARAMETER_OUTPUTSYSTEM_PATH = "-out";
 	protected static final IntProperty tProperty = new IntProperty("t");
+	protected static final StringProperty author = new StringProperty("author");
 
 	@Override
 	public void dispose() {
@@ -159,8 +162,8 @@ public class TWiseParameterSampler
 	@Override
 	protected void addCSVWriters() {
 		dataCSVWriter = addCSVWriter("data.csv",
-				Arrays.asList("AlgorithmID", "ModelID", "ModelName", "Model_Features", "Model_Constraints", "SystemIteration",
-						"AlgorithmIteration", "InTime", "NoError", "Time", "Size", "Validity", "Coverage", "ROIC",
+				Arrays.asList("Author", "AlgorithmID", "ModelID", "ModelName", "Model_Features", "Model_Constraints", "SystemIteration",
+						"AlgorithmIteration", "Timeout", "InTime", "NoError", "Time", "Size", "T-Value", "Validity", "Valid Conditions",  "Coverage", "ROIC",
 						"MSOC", "FIMD", "ICST", "Runtime", "Throughput", "TotalCreatedBytes", "TotalPauseTime",
 						"AveragePauseTime"));
 		modelCSVWriter = addCSVWriter("models.csv", Arrays.asList("ModelID", "Name"));
@@ -501,6 +504,9 @@ public class TWiseParameterSampler
 
 	@Override
 	protected void writeData(CSVWriter dataCSVWriter) {
+		// 0. Author 
+		dataCSVWriter.addValue(author.getValue());
+		
 		// 1. First write algorithm info
 		final Algorithm<?> algorithm = algorithmList.get(algorithmIndex);
 		dataCSVWriter.addValue(algorithm.getFullName());
@@ -516,6 +522,7 @@ public class TWiseParameterSampler
 		dataCSVWriter.addValue(algorithmIteration);
 
 		// 4. Time results
+		dataCSVWriter.addValue(config.timeout.getValue());
 		dataCSVWriter.addValue(result.isTerminatedInTime());
 		dataCSVWriter.addValue(result.isNoError());
 		dataCSVWriter.addValue(result.getTime());
@@ -559,14 +566,15 @@ public class TWiseParameterSampler
 
 	protected void writeMemory(CSVWriter memoryCSVWriter) {
 		// Add memory data to memory
-		NumberFormat nf = NumberFormat.getInstance();
-		nf.setGroupingUsed(false); // remove the dots grouping each 3 digits for CSV format
-		nf.setMaximumFractionDigits(5); // remove the fraction digits
-		memoryCSVWriter.addValue(nf.format(result.getStatisticCompleteRuntime()));
-		memoryCSVWriter.addValue(nf.format(result.getStatisticThroughput()));
-		memoryCSVWriter.addValue(nf.format(result.getStatisticCreatedBytesTotal()));
-		memoryCSVWriter.addValue(nf.format(result.getStatisticPauseTimeTotal()));
-		memoryCSVWriter.addValue(nf.format(result.getStatisticPauseTimeAvg()));
+		NumberFormat df = NumberFormat.getNumberInstance(Locale.US);
+		df.setGroupingUsed(false); // remove the dots grouping each 3 digits for CSV format
+		df.setMaximumFractionDigits(5); // remove the fraction digits
+		
+		memoryCSVWriter.addValue(df.format(result.getStatisticCompleteRuntime()));
+		memoryCSVWriter.addValue(df.format(result.getStatisticThroughput()));
+		memoryCSVWriter.addValue(df.format(result.getStatisticCreatedBytesTotal()));
+		memoryCSVWriter.addValue(df.format(result.getStatisticPauseTimeTotal()));
+		memoryCSVWriter.addValue(df.format(result.getStatisticPauseTimeAvg()));
 	}
 
 	@Override
@@ -591,6 +599,7 @@ public class TWiseParameterSampler
 		final SolutionList configurationList = result.getResult();
 		// Size
 		dataCSVWriter.addValue(configurationList.getSolutions().size());
+		dataCSVWriter.addValue(tProperty.getValue());
 		if (configurationList.getSolutions().size() > 0) {
 			// Validity
 			List<LiteralSet> samples = configurationList.getSolutions();
@@ -602,10 +611,12 @@ public class TWiseParameterSampler
 
 			Logger.getInstance().logInfo("\tTesting configuration validity...", 2, true);
 			dataCSVWriter.addValue(tester.getValidity().getValidInvalidRatio());
-
-			// Completeness
+			
+			//Possible interactions + Completeness
 			Logger.getInstance().logInfo("\tCalculating configuration coverage...", 2, true);
-			dataCSVWriter.addValue(tester.getCoverage().getCoverage());
+			CoverageStatistic coverageStat = tester.getCoverage();
+			dataCSVWriter.addValue(coverageStat.getNumberOfValidConditions());
+			dataCSVWriter.addValue(coverageStat.getCoverage());
 
 			// Stability
 			if (isSampleStabilityConsidered) {
@@ -618,7 +629,7 @@ public class TWiseParameterSampler
 						SamplingStabilityEvaluator core = new SamplingStabilityEvaluator(previousFM, previousSample,
 								currentFM, currentSample);
 						SampleSimilarityResult similarityResult = core.execut();
-						NumberFormat nf = NumberFormat.getInstance();
+						NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 						nf.setGroupingUsed(false); // remove the dots grouping each 3 digits for CSV format
 						nf.setMaximumFractionDigits(5); // remove the fraction digits
 						dataCSVWriter.addValue(nf.format(similarityResult.resultROIC));
