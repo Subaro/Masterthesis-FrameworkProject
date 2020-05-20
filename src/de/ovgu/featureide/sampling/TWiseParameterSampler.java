@@ -270,12 +270,8 @@ public class TWiseParameterSampler
 		if (arguments.contains(PARAMETER_ALGORITHM)) {
 			int index = arguments.indexOf(PARAMETER_ALGORITHM);
 			if ((index + 1) < arguments.size()) {
-				String algorithmName = arguments.get(index + 1);
-				String result = algorithmName;
-				for (String string : algorithmsProperty.getValue()) {
-					result += "," + string;
-				}
-				algorithmsProperty.setValue(result);
+				String algorithmName = arguments.get(index + 1);;
+				algorithmsProperty.setValue(algorithmName);
 				if (isAlgorithmAvailable(algorithmName)) {
 					Logger.getInstance().logInfo("[-alg] = : " + algorithmName + " was found", 1, false);
 				} else {
