@@ -118,7 +118,7 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 		commandElements.clear();
 		addCommandElement("java");
 		addCommandElement("-da");
-		addCommandElement("-Xmx24g");
+		addCommandElement("-Xmx16g");
 		addCommandElement("-Xms2g");
 
 	    String version = Runtime.class.getPackage().getSpecificationVersion();

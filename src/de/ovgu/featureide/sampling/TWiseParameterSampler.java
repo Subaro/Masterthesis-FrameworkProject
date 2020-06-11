@@ -62,31 +62,34 @@ public class TWiseParameterSampler
 	private static final String PARAMETER_COVERAGE = "-t";
 	private static final String PARAMETER_INPUTSYSTEM_PATH = "-in";
 	private static final String PARAMETER_OUTPUTSYSTEM_PATH = "-out";
+	private static final String PARAMETER_STORE_MODE_PATH = "-store";
 	protected static final IntProperty tProperty = new IntProperty("t");
 	protected static final StringProperty author = new StringProperty("author");
+	protected boolean isStoringSamples = false;
 
 	@Override
 	public void dispose() {
 		super.dispose();
-		//remove csv files
-			try {
-				Files.walkFileTree(config.csvPath, new SimpleFileVisitor<Path>() {
-					@Override
-					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-						if (file.getFileName().toString().contains("algorithms.csv") || file.getFileName().toString().contains("models.csv")) {
-							Files.deleteIfExists(file);
-						}
-						return FileVisitResult.CONTINUE;
+		// remove csv files
+		try {
+			Files.walkFileTree(config.csvPath, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+					if (file.getFileName().toString().contains("algorithms.csv")
+							|| file.getFileName().toString().contains("models.csv")) {
+						Files.deleteIfExists(file);
 					}
+					return FileVisitResult.CONTINUE;
+				}
 
-					@Override
-					public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-						return FileVisitResult.CONTINUE;
-					}
-				});
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -162,10 +165,10 @@ public class TWiseParameterSampler
 	@Override
 	protected void addCSVWriters() {
 		dataCSVWriter = addCSVWriter("data.csv",
-				Arrays.asList("Author", "AlgorithmID", "ModelID", "ModelName", "Model_Features", "Model_Constraints", "SystemIteration",
-						"AlgorithmIteration", "Timeout", "InTime", "NoError", "Time", "Size", "T-Value", "Validity", "Valid Conditions",  "Coverage", "ROIC",
-						"MSOC", "FIMD", "ICST", "Runtime", "Throughput", "TotalCreatedBytes", "TotalPauseTime",
-						"AveragePauseTime"));
+				Arrays.asList("Author", "AlgorithmID", "ModelID", "ModelName", "Model_Features", "Model_Constraints",
+						"SystemIteration", "AlgorithmIteration", "Timeout", "InTime", "NoError", "Time", "Size",
+						"T-Value", "Validity", "Valid Conditions", "Coverage", "ROIC", "MSOC", "FIMD", "ICST",
+						"Runtime", "Throughput", "TotalCreatedBytes", "TotalPauseTime", "AveragePauseTime"));
 		modelCSVWriter = addCSVWriter("models.csv", Arrays.asList("ModelID", "Name"));
 		algorithmCSVWriter = addCSVWriter("algorithms.csv",
 				Arrays.asList("ModelID", "AlgorithmID", "Name", "Settings"));
@@ -270,7 +273,8 @@ public class TWiseParameterSampler
 		if (arguments.contains(PARAMETER_ALGORITHM)) {
 			int index = arguments.indexOf(PARAMETER_ALGORITHM);
 			if ((index + 1) < arguments.size()) {
-				String algorithmName = arguments.get(index + 1);;
+				String algorithmName = arguments.get(index + 1);
+				;
 				algorithmsProperty.setValue(algorithmName);
 				if (isAlgorithmAvailable(algorithmName)) {
 					Logger.getInstance().logInfo("[-alg] = : " + algorithmName + " was found", 1, false);
@@ -392,6 +396,12 @@ public class TWiseParameterSampler
 				return false;
 			}
 		}
+
+		// 5) Identify store mode
+		if (arguments.contains(PARAMETER_STORE_MODE_PATH)) {
+			isStoringSamples = true;
+			Logger.getInstance().logInfo("[-store] = true", false);
+		}
 		Logger.getInstance().logInfo(" ", 0, false);
 		return true;
 	}
@@ -469,7 +479,9 @@ public class TWiseParameterSampler
 		Files.createDirectories(curSampleDir);
 		final DIMACSFormatCNF format = new DIMACSFormatCNF();
 		final Path fileName = curSampleDir.resolve("model." + format.getSuffix());
-		SimpleFileHandler.save(fileName, modelCNF, format);
+		if (isStoringSamples) {
+			SimpleFileHandler.save(fileName, modelCNF, format);
+		}
 
 		return modelCNF;
 	}
@@ -500,9 +512,9 @@ public class TWiseParameterSampler
 
 	@Override
 	protected void writeData(CSVWriter dataCSVWriter) {
-		// 0. Author 
+		// 0. Author
 		dataCSVWriter.addValue(author.getValue());
-		
+
 		// 1. First write algorithm info
 		final Algorithm<?> algorithm = algorithmList.get(algorithmIndex);
 		dataCSVWriter.addValue(algorithm.getFullName());
@@ -550,8 +562,10 @@ public class TWiseParameterSampler
 			// 6. Write memory metrics
 			writeMemory(dataCSVWriter);
 			// Save sample
-			writeSamples(config.systemNames.get(systemIndex) + "_" + algorithmList.get(algorithmIndex) + "_"
-					+ systemIteration + "_" + algorithmIteration, sample);
+			if (isStoringSamples) {
+				writeSamples(config.systemNames.get(systemIndex) + "_" + algorithmList.get(algorithmIndex) + "_"
+						+ systemIteration + "_" + algorithmIteration, sample);
+			}
 		} else {
 			// Write default values
 			for (int i = 0; i < 8; i++) {
@@ -565,7 +579,7 @@ public class TWiseParameterSampler
 		NumberFormat df = NumberFormat.getNumberInstance(Locale.US);
 		df.setGroupingUsed(false); // remove the dots grouping each 3 digits for CSV format
 		df.setMaximumFractionDigits(5); // remove the fraction digits
-		
+
 		memoryCSVWriter.addValue(df.format(result.getStatisticCompleteRuntime()));
 		memoryCSVWriter.addValue(df.format(result.getStatisticThroughput()));
 		memoryCSVWriter.addValue(df.format(result.getStatisticCreatedBytesTotal()));
@@ -607,8 +621,8 @@ public class TWiseParameterSampler
 
 			Logger.getInstance().logInfo("\tTesting configuration validity...", 2, true);
 			dataCSVWriter.addValue(tester.getValidity().getValidInvalidRatio());
-			
-			//Possible interactions + Completeness
+
+			// Possible interactions + Completeness
 			Logger.getInstance().logInfo("\tCalculating configuration coverage...", 2, true);
 			CoverageStatistic coverageStat = tester.getCoverage();
 			dataCSVWriter.addValue(coverageStat.getNumberOfValidConditions());
