@@ -21,10 +21,10 @@
 	<property name="build.jar.path" value="${build.jar.dir}/${build.jar.name}" />
 	<property name="build.version.path" value="${build.bin.dir}/version.txt" />
 	
-	<property name="external.dir" value="${fm.benchmark.path}"/>
-	<property name="external.jar.dir" value="${external.dir}/build/jar"/>
+	<property name="external.dir" value="${fm.core.path}/library"/>
+	<property name="external.jar.dir" value="${external.dir}/jar"/>
 	<property name="external.jar.lib.dir" value="${external.jar.dir}/lib"/>
-	<property name="external.jar.path" value="${external.jar.dir}/de.ovgu.featureide.lib.benchmark-v${build.jar.version}.jar"/>
+	<property name="external.jar.path" value="${external.jar.dir}/de.ovgu.featureide.lib.fm-v${build.jar.version}.jar"/>
 
 	<target name="jar">
 		
