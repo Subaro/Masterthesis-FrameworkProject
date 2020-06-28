@@ -14,8 +14,8 @@ import com.tagtraum.perf.gcviewer.model.GCModel;
 import com.tagtraum.perf.gcviewer.model.GCResource;
 import com.tagtraum.perf.gcviewer.model.GcResourceFile;
 
-import de.ovgu.featureide.fm.benchmark.util.Logger;
-import de.ovgu.featureide.sampling.process.GCResult;
+import de.ovgu.featureide.sampling.logger.Logger;
+import de.ovgu.featureide.sampling.process.SamplingMemoryResults;
 
 /***
  * Uses the GCViewer library to extract essential memory consumption information
@@ -39,7 +39,8 @@ public class GarbageCollectorLogAnalyzer {
 		this.pathToLogFile = pathToLogFile;
 	}
 
-	public void processGCResults(GCResult result) {
+	public SamplingMemoryResults processGCResults() {
+		SamplingMemoryResults memoryResults = new SamplingMemoryResults();
 		if (Files.exists(pathToLogFile)) {
 			long numOfLines = 0;
 			PrintStream oldErr = System.err;
@@ -52,12 +53,11 @@ public class GarbageCollectorLogAnalyzer {
 					GCResource logFile = new GcResourceFile(pathToLogFile.toFile());
 					DataReaderFacade dataReaderFacade = new DataReaderFacade();
 					GCModel model = dataReaderFacade.loadModel(logFile);
-					result.setStatisticCreatedBytesTotal(model.getFreedMemoryByGC().getSum() / 1024L);
-					result.setStatisticThroughput(model.getThroughput());
-					result.setStatisticPauseTimeAvg(model.getPause().average());
-					result.setStatisticPauseTimeTotal(model.getPause().getSum());
-					result.setStatisticCompleteRuntime(model.getRunningTime());
-					return;
+					memoryResults.setStatisticCreatedBytesTotal(model.getFreedMemoryByGC().getSum() / 1024L);
+					memoryResults.setStatisticThroughput(model.getThroughput());
+					memoryResults.setStatisticPauseTimeAvg(model.getPause().average());
+					memoryResults.setStatisticPauseTimeTotal(model.getPause().getSum());
+					return memoryResults;
 				}
 			} catch (DataReaderException e) {
 			} catch (IOException e1) {
@@ -70,10 +70,10 @@ public class GarbageCollectorLogAnalyzer {
 		Logger.getInstance().logInfo(
 				"[Error] Could not load garbage collector file. Reason could be that the program did not run correctly or the runtime did not exceed some seconds.",
 				3, true);
-		result.setStatisticCreatedBytesTotal(-1);
-		result.setStatisticThroughput(-1);
-		result.setStatisticPauseTimeAvg(-1);
-		result.setStatisticPauseTimeTotal(-1);
-		result.setStatisticCompleteRuntime(-1);
+		memoryResults.setStatisticCreatedBytesTotal(-1);
+		memoryResults.setStatisticThroughput(-1);
+		memoryResults.setStatisticPauseTimeAvg(-1);
+		memoryResults.setStatisticPauseTimeTotal(-1);
+		return memoryResults;
 	}
 }

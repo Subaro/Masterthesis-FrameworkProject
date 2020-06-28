@@ -5,22 +5,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import de.ovgu.featureide.fm.benchmark.process.Algorithm;
-import de.ovgu.featureide.fm.benchmark.util.Logger;
-import de.ovgu.featureide.fm.core.analysis.cnf.SolutionList;
+import de.ovgu.featureide.sampling.eval.analyzer.GarbageCollectorLogAnalyzer;
+import de.ovgu.featureide.sampling.logger.Logger;
+import de.ovgu.featureide.sampling.process.SamplingMemoryResults;
 
-public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<SolutionList> {
+public abstract class AJavaMemoryTWiseSamplingAlgorithm extends ASamplingAlgorithm {
 
-	protected final Path fmFile;
 	protected final Path gcCollectorPath;
-	protected final Path outputFile;
-	protected final int t;
+	protected final String minimumMemoryAllocation;
+	protected final String maximumMemoryAllocation;
 
-	public AJavaMemoryTWiseSamplingAlgorithm(int t, Path outputFile, Path fmFile, Path gcCollectorPath) {
-		this.t = t;
-		this.outputFile = outputFile;
-		this.fmFile = fmFile;
+	public AJavaMemoryTWiseSamplingAlgorithm(Path fmFile, Path outputFile, int t, Path gcCollectorPath, String minimumMemoryAllocation, String maximumMemoryAllocation) {
+		super(fmFile, outputFile, t);
 		this.gcCollectorPath = gcCollectorPath;
+		this.minimumMemoryAllocation = minimumMemoryAllocation;
+		this.maximumMemoryAllocation = maximumMemoryAllocation;
 	}
 
 	/**
@@ -70,7 +69,7 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 		if ((obj == null)) {
 			return false;
 		}
-		final Algorithm<?> other = (Algorithm<?>) obj;
+		final ASamplingAlgorithm other = (ASamplingAlgorithm) obj;
 		return Objects.equals(this.getFullName(), other.getFullName());
 	}
 
@@ -81,32 +80,10 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 		return gcCollectorPath;
 	}
 
-	/**
-	 * Path for the model file. The model file will be a <i>DIMACS</i> model. This
-	 * model shold be sampled.
-	 */
-	public final Path getPathOfModelFile() {
-		return fmFile;
-	}
-
-	/**
-	 * The path for the output file.
-	 */
-	public final Path getPathOfOutputFile() {
-		return outputFile;
-	}
-
-	/**
-	 * Defines the t-value for the t-coverage.
-	 */
-	public final int getT() {
-		return t;
-	}
-
 	@Override
 	public final void postProcess() throws Exception {
+		super.postProcess();
 		try {
-			Files.deleteIfExists(getPathOfOutputFile());
 			Files.deleteIfExists(getPathOfGarbageCollectorFile());
 		} catch (IOException e) {
 			Logger.getInstance().logError(e);
@@ -118,16 +95,22 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends Algorithm<Soluti
 		commandElements.clear();
 		addCommandElement("java");
 		addCommandElement("-da");
-		addCommandElement("-Xmx16g");
-		addCommandElement("-Xms2g");
+		addCommandElement("-" + this.maximumMemoryAllocation);
+		addCommandElement("-" + this.minimumMemoryAllocation);
 
-	    String version = Runtime.class.getPackage().getSpecificationVersion();
-		if(version.startsWith("11")) {
+		String version = Runtime.class.getPackage().getSpecificationVersion();
+		if (version.startsWith("11")) {
 			addCommandElement("-Xlog:gc:" + getPathOfGarbageCollectorFile());
 		} else {
 			addCommandElement("-Xloggc:" + getPathOfGarbageCollectorFile());
 			addCommandElement("-XX:+PrintGCDateStamps");
 		}
 		addCommandElements();
+	}
+
+	@Override
+	public final SamplingMemoryResults parseMemory() throws IOException {
+		GarbageCollectorLogAnalyzer analyzer = new GarbageCollectorLogAnalyzer(getPathOfGarbageCollectorFile());
+		return analyzer.processGCResults();
 	}
 }

@@ -5,6 +5,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Data structure used to represent samples. Was especially created to calculate
+ * the sample stability with the {@link SamplingStabilityEvaluator}.
+ * 
+ * @author Joshua Sprey
+ */
 public class Sample extends ArrayList<List<String>> {
 
 	/**
@@ -24,6 +30,11 @@ public class Sample extends ArrayList<List<String>> {
 		Collections.copy(this, sample);
 	}
 
+	/**
+	 * Removes all unselected features from the sample.
+	 * 
+	 * @return Sample without negative values.
+	 */
 	public Sample omitNegatives() {
 		Sample sample = new Sample();
 		for (List<String> list : this) {

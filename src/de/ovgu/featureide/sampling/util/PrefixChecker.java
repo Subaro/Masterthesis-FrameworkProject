@@ -2,6 +2,15 @@ package de.ovgu.featureide.sampling.util;
 
 import java.util.List;
 
+import de.ovgu.featureide.sampling.TWiseSamplingFramework;
+
+/**
+ * Class used to compute the longest common prefix for a list of strings. Used
+ * by the {@link TWiseSamplingFramework} to automatically determine whether
+ * sampling stability should be computed or not.
+ * 
+ * @author Joshua Sprey
+ */
 public class PrefixChecker {
 
 	private static boolean allCharactersAreSame(String[] strings, int pos) {
@@ -14,6 +23,12 @@ public class PrefixChecker {
 		return true;
 	}
 
+	/**
+	 * Computes the longest common prefix for a given list of strings.
+	 * 
+	 * @param stringsList List of strings.
+	 * @return Longest common prefix.
+	 */
 	public static String getLongestCommonPrefix(List<String> stringsList) {
 		String[] strings = stringsList.toArray(new String[stringsList.size()]);
 		int commonPrefixLength = 0;
@@ -23,11 +38,17 @@ public class PrefixChecker {
 		return strings[0].substring(0, commonPrefixLength);
 	}
 
-	public static String getLongestCommonPrefix(String[] strings) {
+	/**
+	 * Computes the longest common prefix for a given array of strings.
+	 * 
+	 * @param stringsArray Array of strings.
+	 * @return Longest common prefix.
+	 */
+	public static String getLongestCommonPrefix(String[] stringsArray) {
 		int commonPrefixLength = 0;
-		while (allCharactersAreSame(strings, commonPrefixLength)) {
+		while (allCharactersAreSame(stringsArray, commonPrefixLength)) {
 			commonPrefixLength++;
 		}
-		return strings[0].substring(0, commonPrefixLength);
+		return stringsArray[0].substring(0, commonPrefixLength);
 	}
 }

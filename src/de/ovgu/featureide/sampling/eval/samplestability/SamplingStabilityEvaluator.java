@@ -15,8 +15,18 @@ import de.ovgu.featureide.sampling.eval.samplestability.metrics.ICSTMetric;
 import de.ovgu.featureide.sampling.eval.samplestability.metrics.MSOC;
 import de.ovgu.featureide.sampling.eval.samplestability.metrics.ROIC;
 
+/**
+ * Computes the sampling stability between two samples.
+ * 
+ * @author Joshua Sprey
+ */
 public class SamplingStabilityEvaluator {
 
+	/**
+	 * Contain the similarity results.
+	 * 
+	 * @author Joshua Sprey
+	 */
 	public class SampleSimilarityResult {
 		public double resultFIMDC = -1;
 		public double resultICST = -1;
@@ -24,12 +34,23 @@ public class SamplingStabilityEvaluator {
 		public double resultROIC = -1;
 	}
 
+	/** The feature model of the new samples. */
 	private IFeatureModelManager fmNew;
+	/** The feature model of the old samples. */
 	private IFeatureModelManager fmOld;
-
+	/** The samples of model after a change. */
 	private Sample sampleNew = null;
+	/** The samples of model before a change. */
 	private Sample sampleOld = null;
 
+	/**
+	 * Creates a new stability evaluator.
+	 * 
+	 * @param fmOld     Old model.
+	 * @param sampleOld Old sample.
+	 * @param fmNew     New model.
+	 * @param sampleNew New sample.
+	 */
 	public SamplingStabilityEvaluator(IFeatureModelManager fmOld, Sample sampleOld, IFeatureModelManager fmNew,
 			Sample sampleNew) {
 		this.fmOld = fmOld;
@@ -38,7 +59,14 @@ public class SamplingStabilityEvaluator {
 		this.sampleNew = sampleNew.omitNegatives();
 	}
 
-	private List<String> ConfToString(Configuration c) {
+	/**
+	 * Transform the given configuration into a list a list of strings.
+	 * 
+	 * @param c Configuration that should be transformed.
+	 * @return List containing all selected and deselected feature of a
+	 *         configuration.
+	 */
+	private List<String> confToString(Configuration c) {
 		List<String> list = new ArrayList<>();
 		for (IFeature sf : c.getSelectedFeatures()) {
 			list.add(sf.getName());
@@ -46,39 +74,48 @@ public class SamplingStabilityEvaluator {
 		return list;
 	}
 
+	/**
+	 * Computes all similarity metrics.
+	 * 
+	 * @return {@link SampleSimilarityResult} containting the results for all
+	 *         metrics.
+	 */
 	public SampleSimilarityResult execut() {
 		SampleSimilarityResult result = new SampleSimilarityResult();
 		// 1) ROIC
 		ROIC roic = new ROIC();
 		result.resultROIC = roic.analyze(fmOld, sampleOld, fmNew, sampleNew);
-//		System.out.println("Result roic: " + result);
 
 		// 2) MSOC
 		MSOC msoc = new MSOC();
 		result.resultMSOC = msoc.analyze(fmOld, sampleOld, fmNew, sampleNew);
-//		System.out.println("Result msoc: " + result ); 
 
 		// 3) FIMDC
 		FIMDC fimdc = new FIMDC();
 		result.resultFIMDC = fimdc.analyze(fmOld, sampleOld, fmNew, sampleNew);
-//		System.out.println("Result fimdc: " + result);
 
 		// 4) ICSTMetric
 		ICSTMetric icst = new ICSTMetric();
 		result.resultICST = icst.analyze(fmOld, sampleOld, fmNew, sampleNew);
-//		System.out.println("Result icst: " + result);
 		return result;
 	}
 
+	/**
+	 * TODO MASTER ??
+	 * 
+	 * @param sample
+	 * @param fm
+	 * @return
+	 */
 	private List<List<String>> getValidConf(List<List<String>> sample, FeatureModelManager fm) {
 		List<List<String>> validConfs = new ArrayList<>();
 
 		for (List<String> c : sample) {
 			try {
-				Configuration conf = ListToConfig(c, fm);
+				Configuration conf = listToConfig(c, fm);
 				ConfigurationAnalyzer analyszer = new ConfigurationAnalyzer(fm.getVariableFormula(), conf);
 				if (analyszer.isValid()) {
-					List<String> featureList = ConfToString(conf);
+					List<String> featureList = confToString(conf);
 					validConfs.add(featureList);
 				} else {
 					System.out.println("Invalid Conf found");
@@ -92,7 +129,17 @@ public class SamplingStabilityEvaluator {
 		return validConfs;
 	}
 
-	private Configuration ListToConfig(List<String> list, FeatureModelManager fm) {
+	/**
+	 * Transforms a list of feature into a valid {@link Configuration}.
+	 * 
+	 * Inverse method of
+	 * {@link SamplingStabilityEvaluator#confToString(Configuration)}
+	 * 
+	 * @param list List of feature.
+	 * @param fm   The respective feature model.
+	 * @return A valid configuration.
+	 */
+	private Configuration listToConfig(List<String> list, FeatureModelManager fm) {
 		final Configuration configuration = new Configuration(fm.getVariableFormula());
 		for (final String selection : list) {
 			configuration.setManual(selection, Selection.SELECTED);
