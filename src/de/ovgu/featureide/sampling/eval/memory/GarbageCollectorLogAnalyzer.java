@@ -1,4 +1,4 @@
-package de.ovgu.featureide.sampling.eval.analyzer;
+package de.ovgu.featureide.sampling.eval.memory;
 
 import java.io.IOException;
 import java.io.OutputStream;

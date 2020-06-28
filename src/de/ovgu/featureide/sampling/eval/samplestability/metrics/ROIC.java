@@ -5,7 +5,7 @@ import java.util.Set;
 
 import de.ovgu.featureide.fm.core.io.manager.IFeatureModelManager;
 
-public class ROIC extends AMetric {
+public class ROIC extends AStabilityMetric {
 
 	public ROIC() {
 	}

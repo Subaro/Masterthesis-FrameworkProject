@@ -27,9 +27,41 @@ public class AlgorithmLoaderModule {
 	private final SamplingConfig config;
 	private final TWiseSamplingFramework sampler;
 
-	public AlgorithmLoaderModule(TWiseSamplingFramework sampler, SamplingConfig config) {
+	public AlgorithmLoaderModule(TWiseSamplingFramework sampler) {
 		this.sampler = sampler;
-		this.config = config;
+		this.config = sampler.getConfig();
+	}
+
+	/**
+	 * Check whether an algorithm is available in the
+	 * {@link SamplingConfig#algorithmPath}.
+	 * 
+	 * @param algorithmName Class name of the algorithm to search. This should
+	 *                      include the package names.
+	 * @return {@link Boolean#TRUE} if the algorithm implementation can be found.
+	 */
+	@SuppressWarnings({ "unchecked", "resource", "unused" })
+	public boolean isAlgorithmAvailable(String algorithmName) {
+		ClassLoader cl = null;
+		try {
+			// Load all external algorithms
+			File file = config.algorithmPath.toFile();
+			URL url = file.toURI().toURL();
+			URL[] urls = new URL[] { url };
+			cl = new URLClassLoader(urls);
+		} catch (MalformedURLException e) {
+			return false;
+		}
+		try {
+			if (cl != null) {
+				Class<AJavaMemoryTWiseSamplingAlgorithm> cls;
+				cls = (Class<AJavaMemoryTWiseSamplingAlgorithm>) cl.loadClass(algorithmName);
+				return cls != null;
+			}
+		} catch (ClassNotFoundException e) {
+			return false;
+		}
+		return false;
 	}
 
 	/**
@@ -86,38 +118,6 @@ public class AlgorithmLoaderModule {
 			}
 		}
 		return algorithms;
-	}
-
-	/**
-	 * Check whether an algorithm is available in the
-	 * {@link SamplingConfig#algorithmPath}.
-	 * 
-	 * @param algorithmName Class name of the algorithm to search. This should
-	 *                      include the package names.
-	 * @return {@link Boolean#TRUE} if the algorithm implementation can be found.
-	 */
-	@SuppressWarnings({ "unchecked", "resource", "unused" })
-	public boolean isAlgorithmAvailable(String algorithmName) {
-		ClassLoader cl = null;
-		try {
-			// Load all external algorithms
-			File file = config.algorithmPath.toFile();
-			URL url = file.toURI().toURL();
-			URL[] urls = new URL[] { url };
-			cl = new URLClassLoader(urls);
-		} catch (MalformedURLException e) {
-			return false;
-		}
-		try {
-			if (cl != null) {
-				Class<AJavaMemoryTWiseSamplingAlgorithm> cls;
-				cls = (Class<AJavaMemoryTWiseSamplingAlgorithm>) cl.loadClass(algorithmName);
-				return cls != null;
-			}
-		} catch (ClassNotFoundException e) {
-			return false;
-		}
-		return false;
 	}
 
 }

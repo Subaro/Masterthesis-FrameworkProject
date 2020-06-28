@@ -3,7 +3,6 @@ package de.ovgu.featureide.sampling.modules;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -24,9 +23,17 @@ public class ParameterParserModule {
 	private final SamplingConfig config;
 	private final TWiseSamplingFramework sampler;
 
-	public ParameterParserModule(TWiseSamplingFramework sampler, SamplingConfig config) {
+	public ParameterParserModule(TWiseSamplingFramework sampler) {
 		this.sampler = sampler;
-		this.config = config;
+		this.config = sampler.getConfig();
+	}
+
+	private boolean isAcceptedModel(Path file) {
+		return file.toString().endsWith(".xml") || file.toString().endsWith(".dimacs");
+	}
+
+	private boolean isAlgorithmAvailable(String algorithmName) {
+		return sampler.module_AlgorithmLoader.isAlgorithmAvailable(algorithmName);
 	}
 
 	/**
@@ -175,13 +182,5 @@ public class ParameterParserModule {
 		}
 		Logger.getInstance().logInfo(" ", 0, false);
 		return true;
-	}
-
-	private boolean isAlgorithmAvailable(String algorithmName) {
-		return sampler.module_AlgorithmLoader.isAlgorithmAvailable(algorithmName);
-	}
-
-	private boolean isAcceptedModel(Path file) {
-		return file.toString().endsWith(".xml") || file.toString().endsWith(".dimacs");
 	}
 }

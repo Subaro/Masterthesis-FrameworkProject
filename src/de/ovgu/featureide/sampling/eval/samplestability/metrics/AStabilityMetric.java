@@ -12,7 +12,7 @@ import de.ovgu.featureide.fm.core.io.manager.IFeatureModelManager;
 import de.ovgu.featureide.fm.core.job.monitor.ConsoleMonitor;
 import de.ovgu.featureide.fm.core.job.monitor.IMonitor;
 
-public abstract class AMetric implements IMetric {
+public abstract class AStabilityMetric implements IStabilityMetric {
 
 	public static List<List<String>> checkCoreDead(IFeatureModelManager fm, IMonitor<LiteralSet> monitor) {
 		List<List<String>> coreDead = new ArrayList<List<String>>();

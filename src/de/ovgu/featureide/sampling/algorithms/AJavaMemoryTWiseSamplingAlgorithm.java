@@ -5,17 +5,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import de.ovgu.featureide.sampling.eval.analyzer.GarbageCollectorLogAnalyzer;
+import de.ovgu.featureide.sampling.eval.memory.GarbageCollectorLogAnalyzer;
 import de.ovgu.featureide.sampling.logger.Logger;
 import de.ovgu.featureide.sampling.process.SamplingMemoryResults;
 
 public abstract class AJavaMemoryTWiseSamplingAlgorithm extends ASamplingAlgorithm {
 
 	protected final Path gcCollectorPath;
-	protected final String minimumMemoryAllocation;
 	protected final String maximumMemoryAllocation;
+	protected final String minimumMemoryAllocation;
 
-	public AJavaMemoryTWiseSamplingAlgorithm(Path fmFile, Path outputFile, int t, Path gcCollectorPath, String minimumMemoryAllocation, String maximumMemoryAllocation) {
+	public AJavaMemoryTWiseSamplingAlgorithm(Path fmFile, Path outputFile, int t, Path gcCollectorPath,
+			String minimumMemoryAllocation, String maximumMemoryAllocation) {
 		super(fmFile, outputFile, t);
 		this.gcCollectorPath = gcCollectorPath;
 		this.minimumMemoryAllocation = minimumMemoryAllocation;
@@ -81,6 +82,12 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends ASamplingAlgorit
 	}
 
 	@Override
+	public final SamplingMemoryResults parseMemory() throws IOException {
+		GarbageCollectorLogAnalyzer analyzer = new GarbageCollectorLogAnalyzer(getPathOfGarbageCollectorFile());
+		return analyzer.processGCResults();
+	}
+
+	@Override
 	public final void postProcess() throws Exception {
 		super.postProcess();
 		try {
@@ -106,11 +113,5 @@ public abstract class AJavaMemoryTWiseSamplingAlgorithm extends ASamplingAlgorit
 			addCommandElement("-XX:+PrintGCDateStamps");
 		}
 		addCommandElements();
-	}
-
-	@Override
-	public final SamplingMemoryResults parseMemory() throws IOException {
-		GarbageCollectorLogAnalyzer analyzer = new GarbageCollectorLogAnalyzer(getPathOfGarbageCollectorFile());
-		return analyzer.processGCResults();
 	}
 }

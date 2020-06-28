@@ -10,7 +10,7 @@ import com.google.common.collect.Sets;
 
 import de.ovgu.featureide.fm.core.io.manager.IFeatureModelManager;
 
-public class MSOC extends AMetric {
+public class MSOC extends AStabilityMetric {
 
 	protected Set<String> combinedFeatureSet;
 	protected List<ConfigurationPair> pairList = new ArrayList<>();

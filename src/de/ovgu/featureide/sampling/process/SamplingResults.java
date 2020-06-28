@@ -20,6 +20,7 @@ public class SamplingResults {
 
 	private long resultRuntime = INVALID_TIME;
 	private boolean resultTerminatedInTime = false;
+
 	/**
 	 * Gets the memory results for this run.
 	 * 
@@ -28,6 +29,7 @@ public class SamplingResults {
 	public SamplingMemoryResults getMemoryResults() {
 		return memoryResults;
 	}
+
 	/**
 	 * @return The computed sample of the run.
 	 */

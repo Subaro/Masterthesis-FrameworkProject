@@ -30,13 +30,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import de.ovgu.featureide.sampling.config.properties.AlgorithmProperty;
 import de.ovgu.featureide.sampling.config.properties.BoolProperty;
 import de.ovgu.featureide.sampling.config.properties.IProperty;
 import de.ovgu.featureide.sampling.config.properties.IntProperty;
-import de.ovgu.featureide.sampling.config.properties.Seed;
+import de.ovgu.featureide.sampling.config.properties.LongProperty;
+import de.ovgu.featureide.sampling.config.properties.StringListProperty;
 import de.ovgu.featureide.sampling.config.properties.StringProperty;
-import de.ovgu.featureide.sampling.config.properties.Timeout;
 import de.ovgu.featureide.sampling.logger.Logger;
 
 /**
@@ -66,6 +65,10 @@ public class SamplingConfig {
 	 */
 	private static final String DEFAULT_CONFIG_NAME = "framework_config";
 	/**
+	 * The default path for the data directory relative to the output path.
+	 */
+	private static final String DEFAULT_DATA_DIRECTORY = "data";
+	/**
 	 * The default path for the input model directory relative to the application
 	 * path.
 	 */
@@ -78,10 +81,6 @@ public class SamplingConfig {
 	 * The default path for the samples directory relative to the output path.
 	 */
 	private static final String DEFAULT_SAMPLES_DIRECTORY = "samples";
-	/**
-	 * The default path for the data directory relative to the output path.
-	 */
-	private static final String DEFAULT_DATA_DIRECTORY = "data";
 
 	/** Contains all properties after reading the configuration file. */
 	protected static final List<IProperty> propertyList = new LinkedList<>();
@@ -94,12 +93,14 @@ public class SamplingConfig {
 	public static void addProperty(IProperty property) {
 		propertyList.add(property);
 	}
+
 	/**
 	 * @return A list with all properties.
 	 */
 	public static List<IProperty> getPropertyList() {
 		return propertyList;
 	}
+
 	/** {@link IntProperty} indicates the verbosity of output information. */
 	public final IntProperty algorithmIterations = new IntProperty("algorithmIterations", 1);
 	/** Path to the folder containing sampling algorithm implementations files. */
@@ -109,14 +110,9 @@ public class SamplingConfig {
 	 * {@link BoolProperty} indicates whether computed samples should be saved or
 	 * not.
 	 */
-	public final AlgorithmProperty algorithms = new AlgorithmProperty();
+	public final StringListProperty algorithms = new StringListProperty("algorithms");
 	/** {@link StringProperty} indicates the author of the current benchmark. */
 	public final StringProperty author = new StringProperty("author");
-	/** {@link StringProperty} indicates the author of the current benchmark. */
-	public final StringProperty maximumMemoryAllocation = new StringProperty("maxAlloc", "Xmx4g");
-	/** {@link StringProperty} indicates the author of the current benchmark. */
-	public final StringProperty minimumMemoryAllocation = new StringProperty("minAlloc", "Xms2g");
-
 	/**
 	 * {@link BoolProperty} indicates whether computed samples should be saved or
 	 * not.
@@ -124,29 +120,34 @@ public class SamplingConfig {
 	public final StringProperty calculateStability = new StringProperty("calculateStability", "");
 	/** Path to the folder containing configuration files. */
 	public Path configPath;
+
 	/** Path to the folder containing <code>.csv</code> files. */
 	public Path csvPath;
 	/**
 	 * {@link BoolProperty} indicates whether temporary files should be deleted or
 	 * not.
 	 */
-	public final BoolProperty debug = new BoolProperty("debug");
+	public final BoolProperty debug = new BoolProperty("debug", false);
 	/** Path to the folder containing model files. */
 	public Path inputPath;
-
 	/** Path to the folder containing log files. */
 	public Path logPath;
+	/** {@link StringProperty} indicates the author of the current benchmark. */
+	public final StringProperty maximumMemoryAllocation = new StringProperty("maxAlloc", "Xmx4g");
+
+	/** {@link StringProperty} indicates the author of the current benchmark. */
+	public final StringProperty minimumMemoryAllocation = new StringProperty("minAlloc", "Xms2g");
 	/** Path to the folder containing output files.. */
 	public Path outputPath;
 	/** {@link Seed} determines the seed for each randomized operation. */
-	public final Seed randomSeed = new Seed();
+	public final LongProperty randomSeed = new LongProperty("seed", System.currentTimeMillis());
 	/** Path to the folder containing the computed sample files. */
 	public Path samplesPath;
 	/**
 	 * {@link BoolProperty} indicates whether computed samples should be saved or
 	 * not.
 	 */
-	public final BoolProperty storeSamples = new BoolProperty("storeSamples");
+	public final BoolProperty storeSamples = new BoolProperty("storeSamples", false);
 	/**
 	 * List containing the IDS of all systems that should be used in the current
 	 * benchmark.
@@ -171,10 +172,10 @@ public class SamplingConfig {
 	public Path tempPath;
 
 	/** {@link Timeout} determines the timeout for each algorithm iteration. */
-	public final Timeout timeout = new Timeout();
+	public final LongProperty timeout = new LongProperty("timeout", Long.MAX_VALUE);
 
 	/** {@link IntProperty} indicates the verbosity of output information. */
-	public final IntProperty verbosity = new IntProperty("verbosity");
+	public final IntProperty verbosity = new IntProperty("verbosity", 0);
 
 	/**
 	 * Creates a {@link SamplingConfig} at the
@@ -241,14 +242,6 @@ public class SamplingConfig {
 		tempPath = outputPath.resolve("temp");
 		logPath = outputPath.resolve("log-" + System.currentTimeMillis());
 	}
-	
-	public void refreshPaths() {
-		csvPath = outputPath.resolve(DEFAULT_DATA_DIRECTORY);
-		samplesPath = outputPath.resolve(DEFAULT_SAMPLES_DIRECTORY);
-		tempPath = outputPath.resolve("temp");
-		logPath = outputPath.resolve("log-" + System.currentTimeMillis());
-		readSystemNames();
-	}
 
 	/**
 	 * Reads the content of a configuration file.
@@ -300,6 +293,14 @@ public class SamplingConfig {
 			systemIDs = new ArrayList<>();
 			Logger.getInstance().logError("No feature models found in input path: \"" + inputPath.toString() + "\"!");
 		}
+	}
+
+	public void refreshPaths() {
+		csvPath = outputPath.resolve(DEFAULT_DATA_DIRECTORY);
+		samplesPath = outputPath.resolve(DEFAULT_SAMPLES_DIRECTORY);
+		tempPath = outputPath.resolve("temp");
+		logPath = outputPath.resolve("log-" + System.currentTimeMillis());
+		readSystemNames();
 	}
 
 }

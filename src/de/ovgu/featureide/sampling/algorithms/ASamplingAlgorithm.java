@@ -17,8 +17,8 @@ public abstract class ASamplingAlgorithm implements IOutputReader {
 
 	protected final ArrayList<String> commandElements = new ArrayList<>();
 
-	protected int iterations = -1;
 	protected final Path fmFile;
+	protected int iterations = -1;
 	protected final Path outputFile;
 	protected final int t;
 
@@ -104,20 +104,33 @@ public abstract class ASamplingAlgorithm implements IOutputReader {
 	 */
 	public abstract String getParameterSettings();
 
+	/**
+	 * Path for the model file. The model file will be a <i>DIMACS</i> model. This
+	 * model should be sampled.
+	 */
+	public final Path getPathOfModelFile() {
+		return fmFile;
+	}
+
+	/**
+	 * The path for the output file. Keep in mind that the output file will be
+	 * removed by {@link #postProcess()} after the process is finished.
+	 */
+	public final Path getPathOfOutputFile() {
+		return outputFile;
+	}
+
+	/**
+	 * Defines the t-value for the t-coverage.
+	 */
+	public final int getT() {
+		return t;
+	}
+
 	@Override
 	public int hashCode() {
 		return getFullName().hashCode();
 	}
-
-	/**
-	 * This method is used to transform the sample computed by the sampling
-	 * algorithm into the data structure used by our sampling framework. This method
-	 * is called after the sampling process is finished.
-	 * 
-	 * @return The computed sample as {@link SolutionList}
-	 * @throws IOException
-	 */
-	public abstract SolutionList parseResults() throws IOException;
 
 	/**
 	 * This method is used to compute the memory statistics for you sampling
@@ -131,6 +144,16 @@ public abstract class ASamplingAlgorithm implements IOutputReader {
 	 * @see SamplingMemoryResults#setStatisticThroughput(double)
 	 */
 	public abstract SamplingMemoryResults parseMemory() throws IOException;
+
+	/**
+	 * This method is used to transform the sample computed by the sampling
+	 * algorithm into the data structure used by our sampling framework. This method
+	 * is called after the sampling process is finished.
+	 * 
+	 * @return The computed sample as {@link SolutionList}
+	 * @throws IOException
+	 */
+	public abstract SolutionList parseResults() throws IOException;
 
 	/**
 	 * The post process is executed as the last method for an algorithm instance. It
@@ -155,29 +178,6 @@ public abstract class ASamplingAlgorithm implements IOutputReader {
 	public void preProcess() throws Exception {
 		commandElements.clear();
 		addCommandElements();
-	}
-
-	/**
-	 * Path for the model file. The model file will be a <i>DIMACS</i> model. This
-	 * model should be sampled.
-	 */
-	public final Path getPathOfModelFile() {
-		return fmFile;
-	}
-
-	/**
-	 * The path for the output file. Keep in mind that the output file will be
-	 * removed by {@link #postProcess()} after the process is finished.
-	 */
-	public final Path getPathOfOutputFile() {
-		return outputFile;
-	}
-
-	/**
-	 * Defines the t-value for the t-coverage.
-	 */
-	public final int getT() {
-		return t;
 	}
 
 	@Override

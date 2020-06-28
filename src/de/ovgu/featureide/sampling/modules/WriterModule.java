@@ -36,18 +36,22 @@ import de.ovgu.featureide.sampling.util.CSVWriter;
  */
 public class WriterModule {
 
+	private final SamplingConfig config;
 	/**
 	 * The csv writer that can be used to store the data results for our evaluation
 	 */
 	private CSVWriter dataCSVWriter;
-	private final SamplingConfig config;
 	private final TWiseSamplingFramework sampler;
 
-	public WriterModule(TWiseSamplingFramework sampler, SamplingConfig config) {
+	public WriterModule(TWiseSamplingFramework sampler) {
 		this.sampler = sampler;
-		this.config = config;
+		this.config = sampler.getConfig();
 	}
-	
+
+	public CSVWriter getDataCSVWriter() {
+		return dataCSVWriter;
+	}
+
 	public void init() {
 		dataCSVWriter = new CSVWriter();
 		dataCSVWriter.setAppend(true);
@@ -114,7 +118,8 @@ public class WriterModule {
 				sample.add(configList);
 			}
 			// Cache sample
-			sampler.module_StabilityCalculator.cacheCurrentSample(sampler.getSystemIteration()- 1, sampler.getAlgorithmIndex(), sample);
+			sampler.module_StabilityCalculator.cacheCurrentSample(sampler.getSystemIteration() - 1,
+					sampler.getAlgorithmIndex(), sample);
 
 			// 5. Write sample metrics
 			writeSamplesInfo(dataCSVWriter, result);
@@ -122,8 +127,9 @@ public class WriterModule {
 			writeMemory(dataCSVWriter, result);
 			// Save sample
 			if (config.storeSamples.getValue()) {
-				writeSamples(config.systemNames.get(sampler.getSystemIndex()) + "_" + sampler.getAlgorithmList().get(sampler.getAlgorithmIndex()) + "_"
-						+ sampler.getSystemIteration()+ "_" + sampler.getAlgorithmIteration(), sample);
+				writeSamples(config.systemNames.get(sampler.getSystemIndex()) + "_"
+						+ sampler.getAlgorithmList().get(sampler.getAlgorithmIndex()) + "_"
+						+ sampler.getSystemIteration() + "_" + sampler.getAlgorithmIteration(), sample);
 			}
 		} else {
 			// Write default values
@@ -171,8 +177,8 @@ public class WriterModule {
 			// Validity
 			List<LiteralSet> samples = configurationList.getSolutions();
 			TWiseConfigurationTester tester = new TWiseConfigurationTester(sampler.getRandomizedModelCNF());
-			tester.setNodes(
-					TWiseConfigurationGenerator.convertLiterals(sampler.getRandomizedModelCNF().getVariables().getLiterals()));
+			tester.setNodes(TWiseConfigurationGenerator
+					.convertLiterals(sampler.getRandomizedModelCNF().getVariables().getLiterals()));
 			tester.setT(config.tCoverage.getValue());
 			tester.setSample(samples);
 
@@ -188,13 +194,15 @@ public class WriterModule {
 			// Stability
 			if (config.calculateStability.getValue().toLowerCase().equals("true")) {
 				if (sampler.getSystemIndex() >= 1) {
-					Sample currentSample = sampler.module_StabilityCalculator.getCurrentCachedSample(sampler.getSystemIteration() - 1,
-							sampler.getAlgorithmIndex());
-					Sample previousSample = sampler.module_StabilityCalculator.getPreviousCachedSample(sampler.getSystemIteration() - 1,
-							sampler.getAlgorithmIndex());
+					Sample currentSample = sampler.module_StabilityCalculator
+							.getCurrentCachedSample(sampler.getSystemIteration() - 1, sampler.getAlgorithmIndex());
+					Sample previousSample = sampler.module_StabilityCalculator
+							.getPreviousCachedSample(sampler.getSystemIteration() - 1, sampler.getAlgorithmIndex());
 					if (currentSample != null && previousSample != null) {
-						IFeatureModelManager currentFM = FeatureModelManager.getInstance(sampler.getSystems()[sampler.getSystemIndex()]);
-						IFeatureModelManager previousFM = FeatureModelManager.getInstance(sampler.getSystems()[sampler.getSystemIndex() - 1]);
+						IFeatureModelManager currentFM = FeatureModelManager
+								.getInstance(sampler.getSystems()[sampler.getSystemIndex()]);
+						IFeatureModelManager previousFM = FeatureModelManager
+								.getInstance(sampler.getSystems()[sampler.getSystemIndex() - 1]);
 						SamplingStabilityEvaluator core = new SamplingStabilityEvaluator(previousFM, previousSample,
 								currentFM, currentSample);
 						SampleSimilarityResult similarityResult = core.execut();
@@ -228,9 +236,5 @@ public class WriterModule {
 				dataCSVWriter.addValue(-1);
 			}
 		}
-	}
-	
-	public CSVWriter getDataCSVWriter() {
-		return dataCSVWriter;
 	}
 }

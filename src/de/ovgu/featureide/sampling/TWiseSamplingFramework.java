@@ -6,35 +6,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import de.ovgu.featureide.fm.core.analysis.cnf.CNF;
 import de.ovgu.featureide.fm.core.analysis.cnf.ClauseList;
-import de.ovgu.featureide.fm.core.analysis.cnf.LiteralSet;
-import de.ovgu.featureide.fm.core.analysis.cnf.SolutionList;
 import de.ovgu.featureide.fm.core.analysis.cnf.formula.FeatureModelFormula;
-import de.ovgu.featureide.fm.core.analysis.cnf.generator.configuration.twise.TWiseConfigurationGenerator;
-import de.ovgu.featureide.fm.core.analysis.cnf.generator.configuration.twise.TWiseConfigurationTester;
-import de.ovgu.featureide.fm.core.analysis.cnf.generator.configuration.twise.test.CoverageStatistic;
 import de.ovgu.featureide.fm.core.base.IFeatureModel;
 import de.ovgu.featureide.fm.core.io.dimacs.DIMACSFormatCNF;
-import de.ovgu.featureide.fm.core.io.manager.FeatureModelManager;
-import de.ovgu.featureide.fm.core.io.manager.IFeatureModelManager;
 import de.ovgu.featureide.fm.core.io.manager.SimpleFileHandler;
 import de.ovgu.featureide.sampling.algorithms.ASamplingAlgorithm;
 import de.ovgu.featureide.sampling.config.SamplingConfig;
 import de.ovgu.featureide.sampling.config.properties.IProperty;
-import de.ovgu.featureide.sampling.eval.samplestability.Sample;
-import de.ovgu.featureide.sampling.eval.samplestability.SamplingStabilityEvaluator;
-import de.ovgu.featureide.sampling.eval.samplestability.SamplingStabilityEvaluator.SampleSimilarityResult;
 import de.ovgu.featureide.sampling.logger.Logger;
 import de.ovgu.featureide.sampling.modules.AlgorithmLoaderModule;
 import de.ovgu.featureide.sampling.modules.ParameterParserModule;
@@ -42,9 +26,7 @@ import de.ovgu.featureide.sampling.modules.StabilityCalculatorModule;
 import de.ovgu.featureide.sampling.modules.WriterModule;
 import de.ovgu.featureide.sampling.process.SamplingProcessRunner;
 import de.ovgu.featureide.sampling.process.SamplingResults;
-import de.ovgu.featureide.sampling.util.CSVWriter;
 import de.ovgu.featureide.sampling.util.FeatureModelReader;
-import de.ovgu.featureide.sampling.util.PrefixChecker;
 
 /**
  * This class control the evaluation of the sampling framework.
@@ -70,19 +52,6 @@ public class TWiseSamplingFramework {
 		}
 	}
 
-	/**
-	 * Parse the parameters for the framework. For more detail see
-	 * {@link ParameterParserModule}.
-	 * 
-	 * @param args Programm arguments
-	 * @return {@link Boolean#TRUE} if the parsing went without errors.
-	 */
-	private boolean parseParameter(String[] args) {
-		boolean value = module_ParameterParser.parseParameter(args);
-		config.refreshPaths();
-		return value;
-	}
-
 	public static String toString(List<String> sample) {
 		StringBuilder sb = new StringBuilder();
 		for (String string : sample) {
@@ -95,19 +64,14 @@ public class TWiseSamplingFramework {
 		return sb.toString();
 	}
 
-	public ParameterParserModule module_ParameterParser;
-	public AlgorithmLoaderModule module_AlgorithmLoader;
-	public StabilityCalculatorModule module_StabilityCalculator;
-	public WriterModule module_Writer;
-
 	/** Index of the currently evaluated algorithm */
 	protected int algorithmIndex;
 
 	/** The value of the current algorithm iteration. */
 	protected int algorithmIteration;
+
 	/** List containing all algorithms */
 	protected List<ASamplingAlgorithm> algorithmList;
-
 	/** The configuration for the sampling framework. */
 	protected final SamplingConfig config;
 	/**
@@ -115,31 +79,32 @@ public class TWiseSamplingFramework {
 	 * respective model should be stored.
 	 */
 	protected Path curSampleDir;
-
-	public Path getCurSampleDir() {
-		return curSampleDir;
-	}
-
 	/** The currently evaluated feature model in conjunctive normal form. */
 	protected CNF modelCNF;
+
+	public AlgorithmLoaderModule module_AlgorithmLoader;
+
+	public ParameterParserModule module_ParameterParser;
+	public StabilityCalculatorModule module_StabilityCalculator;
+
+	public WriterModule module_Writer;
 	/**
 	 * The currently evaluated feature model, randomized, in conjunctive normal
 	 * form.
 	 */
 	protected CNF randomizedModelCNF;
+
 	/** The results of the last evaluation run */
 	protected SamplingResults result;
+
 	/** The numerical index of the currently processed system. */
 	protected int systemIndex;
-
 	/** The value of the current system iteration. */
 	protected int systemIteration;
-
 	/**
 	 * Contains all systems feature models to be used for the stability calculation
 	 */
 	public IFeatureModel[] systems = null;
-
 	/**
 	 * Creates a new {@link TWiseSamplingFramework} that automatically read the
 	 * configuration, set up every path, and do more things.
@@ -151,10 +116,10 @@ public class TWiseSamplingFramework {
 		config = new SamplingConfig(configName);
 
 		// Create modules
-		module_ParameterParser = new ParameterParserModule(this, config);
-		module_AlgorithmLoader = new AlgorithmLoaderModule(this, config);
-		module_StabilityCalculator = new StabilityCalculatorModule(this, config);
-		module_Writer = new WriterModule(this, config);
+		module_ParameterParser = new ParameterParserModule(this);
+		module_AlgorithmLoader = new AlgorithmLoaderModule(this);
+		module_StabilityCalculator = new StabilityCalculatorModule(this);
+		module_Writer = new WriterModule(this);
 	}
 
 	protected CNF adaptModel() throws Exception {
@@ -215,6 +180,46 @@ public class TWiseSamplingFramework {
 		}
 	}
 
+	public int getAlgorithmIndex() {
+		return algorithmIndex;
+	}
+
+	public int getAlgorithmIteration() {
+		return algorithmIteration;
+	}
+
+	public List<ASamplingAlgorithm> getAlgorithmList() {
+		return algorithmList;
+	}
+
+	public SamplingConfig getConfig() {
+		return config;
+	}
+
+	public Path getCurSampleDir() {
+		return curSampleDir;
+	}
+
+	public CNF getModelCNF() {
+		return modelCNF;
+	}
+
+	public CNF getRandomizedModelCNF() {
+		return randomizedModelCNF;
+	}
+
+	public int getSystemIndex() {
+		return systemIndex;
+	};
+
+	public int getSystemIteration() {
+		return systemIteration;
+	};
+
+	public IFeatureModel[] getSystems() {
+		return systems;
+	}
+
 	/**
 	 * Initializes everything for the evaluation.
 	 * 
@@ -265,6 +270,19 @@ public class TWiseSamplingFramework {
 		Logger.getInstance().logInfo(sb.toString(), 1, false);
 	}
 
+	/**
+	 * Parse the parameters for the framework. For more detail see
+	 * {@link ParameterParserModule}.
+	 * 
+	 * @param args Programm arguments
+	 * @return {@link Boolean#TRUE} if the parsing went without errors.
+	 */
+	private boolean parseParameter(String[] args) {
+		boolean value = module_ParameterParser.parseParameter(args);
+		config.refreshPaths();
+		return value;
+	}
+
 	protected CNF prepareModel() throws Exception {
 		final String systemName = config.systemNames.get(systemIndex);
 
@@ -280,7 +298,7 @@ public class TWiseSamplingFramework {
 		curSampleDir = config.samplesPath.resolve(systemName);
 		Files.createDirectories(curSampleDir);
 		final DIMACSFormatCNF format = new DIMACSFormatCNF();
- 		final Path fileName = curSampleDir.resolve("model." + format.getSuffix());
+		final Path fileName = curSampleDir.resolve("model." + format.getSuffix());
 		if (config.storeSamples.getValue()) {
 			SimpleFileHandler.save(fileName, modelCNF, format);
 		}
@@ -292,14 +310,14 @@ public class TWiseSamplingFramework {
 		for (IProperty prop : SamplingConfig.getPropertyList()) {
 			Logger.getInstance().logInfo(prop.toString(), 1, false);
 		}
-	};
+	}
 
 	protected void randomizeConditions(List<List<ClauseList>> groupedConditions, Random random) {
 		for (List<ClauseList> group : groupedConditions) {
 			Collections.shuffle(group, random);
 		}
 		Collections.shuffle(groupedConditions, random);
-	};
+	}
 
 	public void run() {
 		if (config.systemIterations.getValue() > 0) {
@@ -388,37 +406,5 @@ public class TWiseSamplingFramework {
 			Logger.getInstance().logError(e);
 			throw e;
 		}
-	}
-
-	public CNF getModelCNF() {
-		return modelCNF;
-	}
-
-	public CNF getRandomizedModelCNF() {
-		return randomizedModelCNF;
-	}
-
-	public int getAlgorithmIndex() {
-		return algorithmIndex;
-	}
-
-	public int getAlgorithmIteration() {
-		return algorithmIteration;
-	}
-
-	public List<ASamplingAlgorithm> getAlgorithmList() {
-		return algorithmList;
-	}
-
-	public int getSystemIndex() {
-		return systemIndex;
-	}
-
-	public int getSystemIteration() {
-		return systemIteration;
-	}
-
-	public IFeatureModel[] getSystems() {
-		return systems;
 	}
 }
