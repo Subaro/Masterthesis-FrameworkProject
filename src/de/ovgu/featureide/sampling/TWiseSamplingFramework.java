@@ -331,7 +331,7 @@ public class TWiseSamplingFramework {
 			systemLoop: for (systemIndex = 0; systemIndex < systemIndexEnd; systemIndex++) {
 				logSystem();
 				try {
-					// Load and prepare all algoithms that are registered in the config file
+					// Load and prepare all algorithms that are registered in the config file
 					algorithmList = module_AlgorithmLoader.loadAndPrepareAlgorithms();
 
 					// As we start with a new system, we need to refresh the cached samples for the

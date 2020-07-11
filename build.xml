@@ -86,7 +86,7 @@
 			<fileset dir="${src.dir}" includes="**/*.java" />
 			<fileset file="${license.path}" />
 			<manifest>
-                <attribute name="Main-Class" value="de.ovgu.featureide.fm.benchmark.Dispatcher"/>
+                <attribute name="Main-Class" value="de.ovgu.featureide.sampling.TWiseSamplingFramework"/>
                 <attribute name="Class-Path" value="${jar.class.path}"/>
             </manifest>
 		</jar>

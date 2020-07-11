@@ -42,7 +42,7 @@ public class Logger {
 	/** Reduced output stream for general console output. */
 	private PrintStream outStreamReduced;
 
-	/** Determines the verborsity of printed information. */
+	/** Determines the verbosity of printed information. */
 	public int verboseLevel = 0;
 
 	private Logger() {
@@ -53,9 +53,9 @@ public class Logger {
 	}
 
 	/**
-	 * @return The verborsity level.
+	 * @return The verbosity level.
 	 */
-	public int getVerborsityLevel() {
+	public int getVerbosityLevel() {
 		return verboseLevel;
 	}
 
@@ -63,7 +63,7 @@ public class Logger {
 	 * Set up the logger.
 	 * 
 	 * @param outputPath   Path to a folder that should contain all logs.
-	 * @param verboseLevel The verborsity of printed information.
+	 * @param verboseLevel The verbosity of printed information.
 	 * @throws FileNotFoundException If the output Path is not a directory.
 	 */
 	public void install(Path outputPath, int verboseLevel) throws FileNotFoundException {
@@ -122,7 +122,7 @@ public class Logger {
 	 * 
 	 * @param error       Error to log.
 	 * @param onlyVerbose {@link Boolean#FALSE} When the error should be printed
-	 *                    independent from the verborsity level.
+	 *                    independent from the verbosity level.
 	 */
 	public final void logError(Throwable error, boolean onlyVerbose) {
 		println(errorStreamReduced, error, onlyVerbose);
@@ -142,7 +142,7 @@ public class Logger {
 	 * 
 	 * @param message     Message to log.
 	 * @param onlyVerbose {@link Boolean#FALSE} When the message should be printed
-	 *                    independent from the verborsity level.
+	 *                    independent from the verbosity level.
 	 */
 	public final void logInfo(String message, boolean onlyVerbose) {
 		logInfo(message, 0, onlyVerbose);
@@ -170,7 +170,7 @@ public class Logger {
 	 * @param message     Message to log.
 	 * @param tabs        Number of tabs to indent.
 	 * @param onlyVerbose {@link Boolean#FALSE} When the message should be printed
-	 *                    independent from the verborsity level.
+	 *                    independent from the verbosity level.
 	 */
 	public final void logInfo(String message, int tabs, boolean onlyVerbose) {
 		if (tabs > 0) {
@@ -191,7 +191,7 @@ public class Logger {
 	 * @param stream      Stream to print to.
 	 * @param message     The message to print.
 	 * @param onlyVerbose {@link Boolean#FALSE} When the message should be printed
-	 *                    independent from the verborsity level.
+	 *                    independent from the verbosity level.
 	 */
 	private void println(PrintStream stream, String message, boolean onlyVerbose) {
 		if (verboseLevel > 0 || !onlyVerbose) {
@@ -205,7 +205,7 @@ public class Logger {
 	 * @param stream      Stream to print to.
 	 * @param message     The message to print.
 	 * @param onlyVerbose {@link Boolean#FALSE} When the error should be printed
-	 *                    independent from the verborsity level.
+	 *                    independent from the verbosity level.
 	 */
 	private void println(PrintStream stream, Throwable error, boolean onlyVerbose) {
 		if (verboseLevel > 0 || !onlyVerbose) {

@@ -11,3 +11,4 @@ bin.javac.path = "path to javac.exe"
 # Path to fm.core plugin
 fm.core.path = "path to de.ovgu.featureide.fm.core folder"
 ```
+3. Run `build.xml` as with Ant
